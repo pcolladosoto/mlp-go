@@ -16,11 +16,11 @@ type Mlp struct {
 	HiddenDim []int
 	NHidden   int
 	OutDim    int
-	ActFunc   func(int, int, float64) float64
+	ActFunc   func(float64) float64
 	Weights   []mat.Matrix
 }
 
-func NewMlp(dims []int, actF func(int, int, float64) float64, variance float64) (*Mlp, error) {
+func NewMlp(dims []int, actF func(float64) float64, variance float64) (*Mlp, error) {
 	if len(dims) < 3 {
 		return nil, fmt.Errorf("we need at least 3 dimensions for the input, hidden and output layer")
 	}
@@ -74,7 +74,7 @@ func (mlp *Mlp) ComputeActivation(input []float64) (activations []*mat.Dense, ne
 
 		acts = append(acts, new(mat.Dense))
 
-		acts[i+1].Apply(mlp.ActFunc, &tmp)
+		acts[i+1].Apply(func(i, j int, v float64) float64 { return mlp.ActFunc(v) }, &tmp)
 	}
 
 	return acts[1:], net_acts
