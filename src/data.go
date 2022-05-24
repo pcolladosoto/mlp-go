@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
 	"image"
 	"image/color"
@@ -75,22 +74,6 @@ func read_labels(fpath string) (labels, error) {
 
 func to_big_endian(data []byte) uint32 {
 	return uint32(data[0])<<24 | uint32(data[1])<<16 | uint32(data[2])<<8 | uint32(data[3])
-}
-
-func read_labels_o(fpath string) (labels, error) {
-	var lbs labels
-
-	fd, err := os.Open(fpath)
-	if err != nil {
-		return labels{}, err
-	}
-	defer fd.Close()
-
-	if err := binary.Read(fd, binary.BigEndian, lbs); err != nil {
-		return labels{}, err
-	}
-
-	return lbs, nil
 }
 
 func read_imgs(fpath string) (images, error) {
