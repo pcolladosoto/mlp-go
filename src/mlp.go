@@ -55,14 +55,23 @@ func (mlp *Mlp) String() string {
 	return msg
 }
 
+func (mlp *Mlp) appendRow(m *mat.Dense, n float64) *mat.Dense {
+	rawM := m.RawMatrix()
+	return mat.NewDense(m.RawMatrix().Rows+1, rawM.Cols, append(rawM.Data, n))
+}
+
+func (mlp *Mlp) chopRow(m *mat.Dense) *mat.Dense {
+	rawM := m.RawMatrix()
+	return mat.NewDense(m.RawMatrix().Rows-1, rawM.Cols, rawM.Data[:len(rawM.Data)-1])
+}
+
 func (mlp *Mlp) ComputeActivation(input []float64) (activations []*mat.Dense, net_activations []*mat.Dense) {
 	var net_acts, acts []*mat.Dense
 
 	acts = append(acts, mat.NewDense(mlp.InDim, 1, input))
 
 	for i, w := range mlp.Weights {
-		rawM := acts[i].RawMatrix()
-		tmpA := mat.NewDense(rawM.Rows+1, rawM.Cols, append(rawM.Data, 1))
+		tmpA := mlp.appendRow(acts[i], 1)
 
 		// fmt.Printf("Multiplying %v * %v\n", mat.Formatted(w, mat.FormatMATLAB()), mat.Formatted(tmpA, mat.FormatMATLAB()))
 		// fmt.Printf("Dimensionality:\n\tWeights -> %s\n\tActs    -> %s\n", fmt.Sprint(w.Dims()), fmt.Sprint(tmpA.Dims()))
@@ -78,6 +87,61 @@ func (mlp *Mlp) ComputeActivation(input []float64) (activations []*mat.Dense, ne
 	}
 
 	return acts[1:], net_acts
+}
+
+func (mlp *Mlp) Adapt(input, target []float64, learning_rate float64) {
+	acts, _ := mlp.ComputeActivation(input)
+
+	// Reverse the activations
+	for i, j := 0, len(acts)-1; i < j; i, j = i+1, j-1 {
+		acts[i], acts[j] = acts[j], acts[i]
+	}
+
+	delta_helper := func(a, b *mat.Dense) *mat.Dense {
+		var tmp mat.Dense
+		tmp.Apply(func(i, j int, v float64) float64 { return 1 - v }, b)
+		tmp.MulElem(&tmp, b)
+		tmp.MulElem(&tmp, a)
+		return &tmp
+	}
+
+	var (
+		deltas []*mat.Dense
+		tmp    mat.Dense
+	)
+
+	// fmt.Printf("\nBeginning adaptation with learning rate = %1.3f\n", learning_rate)
+
+	acts = append(acts, mat.NewDense(mlp.InDim, 1, input))
+	tmp.Sub(acts[0], mat.NewDense(mlp.OutDim, 1, target))
+	deltas = append(deltas, delta_helper(&tmp, acts[0]))
+
+	// fmt.Printf("\tdeltas[00] -> %7.4f\n", mat.Formatted(deltas[0], mat.FormatMATLAB()))
+
+	for i := range mlp.Weights {
+		var updated_weights, tmp_delta mat.Dense
+		updated_weights.Mul(deltas[i], mlp.appendRow(acts[i+1], 1).T())
+		updated_weights.Apply(func(i, j int, v float64) float64 { return learning_rate * v }, &updated_weights)
+
+		// fmt.Printf("\t\tWeigth Matrix variation for layer %2d -> %6.3f\n",
+		// 	len(mlp.Weights)-i, mat.Formatted(&updated_weights, mat.FormatMATLAB()))
+
+		updated_weights.Sub(mlp.Weights[len(mlp.Weights)-(i+1)], &updated_weights)
+
+		// tmp_delta.Mul(updated_weights.T(), deltas[i])
+		tmp_delta.Mul(mlp.Weights[len(mlp.Weights)-(i+1)].T(), deltas[i])
+
+		deltas = append(deltas, delta_helper(mlp.chopRow(&tmp_delta), acts[i+1]))
+
+		// fmt.Printf("\tdeltas[%02d] -> %7.4f\n", i+1, mat.Formatted(deltas[i+1], mat.FormatMATLAB()))
+		// fmt.Printf("\t\tWeigth Matrix %2d before adapting     -> %6.3f\n",
+		// 	len(mlp.Weights)-(i+1), mat.Formatted(mlp.Weights[len(mlp.Weights)-(i+1)], mat.FormatMATLAB()))
+
+		mlp.Weights[len(mlp.Weights)-(i+1)] = mat.DenseCopyOf(&updated_weights)
+
+		// fmt.Printf("\t\tWeigth Matrix %2d after adapting      -> %6.3f\n",
+		// 	len(mlp.Weights)-(i+1), mat.Formatted(mlp.Weights[len(mlp.Weights)-(i+1)], mat.FormatMATLAB()))
+	}
 }
 
 func (mlp *Mlp) GenTestData() {
