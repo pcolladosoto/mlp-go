@@ -39,7 +39,7 @@ func TestForwardPropagation(t *testing.T) {
 
 	var buff bytes.Buffer
 
-	acts, net_acts := m.ComputeActivation([]float64{1, 0})
+	_, acts, net_acts := m.ComputeActivation([]float64{1, 0})
 
 	ref_acts_raw, err := ioutil.ReadFile("testdata/act_data.b64")
 	if err != nil {

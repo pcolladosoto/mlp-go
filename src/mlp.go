@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math"
 	"math/rand"
+	"time"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -26,6 +27,8 @@ func NewMlp(dims []int, actF func(float64) float64, variance float64) (*Mlp, err
 	}
 
 	mlp := Mlp{InDim: dims[0], HiddenDim: dims[1 : len(dims)-1], NHidden: len(dims) - 2, OutDim: dims[len(dims)-1], ActFunc: actF}
+
+	rand.Seed(time.Now().Unix())
 
 	// Let's avoid recomputing the standard deviation over and over
 	stdDev := math.Sqrt(variance)
@@ -65,7 +68,7 @@ func (mlp *Mlp) chopRow(m *mat.Dense) *mat.Dense {
 	return mat.NewDense(m.RawMatrix().Rows-1, rawM.Cols, rawM.Data[:len(rawM.Data)-1])
 }
 
-func (mlp *Mlp) ComputeActivation(input []float64) (activations []*mat.Dense, net_activations []*mat.Dense) {
+func (mlp *Mlp) ComputeActivation(input []float64) (output []float64, activations []*mat.Dense, net_activations []*mat.Dense) {
 	var net_acts, acts []*mat.Dense
 
 	acts = append(acts, mat.NewDense(mlp.InDim, 1, input))
@@ -86,11 +89,11 @@ func (mlp *Mlp) ComputeActivation(input []float64) (activations []*mat.Dense, ne
 		acts[i+1].Apply(func(i, j int, v float64) float64 { return mlp.ActFunc(v) }, &tmp)
 	}
 
-	return acts[1:], net_acts
+	return acts[len(acts)-1].RawMatrix().Data, acts[1:], net_acts
 }
 
 func (mlp *Mlp) Adapt(input, target []float64, learning_rate float64) {
-	acts, _ := mlp.ComputeActivation(input)
+	_, acts, _ := mlp.ComputeActivation(input)
 
 	// Reverse the activations
 	for i, j := 0, len(acts)-1; i < j; i, j = i+1, j-1 {
@@ -147,7 +150,7 @@ func (mlp *Mlp) Adapt(input, target []float64, learning_rate float64) {
 func (mlp *Mlp) GenTestData() {
 	mlp.SetWeights([][]float64{{6, 0, -2, 2, -2, 0}, {-4, 2, 2}})
 
-	acts, net_acts := mlp.ComputeActivation([]float64{1, 0})
+	_, acts, net_acts := mlp.ComputeActivation([]float64{1, 0})
 
 	acts_buff, net_acts_buff := bytes.Buffer{}, bytes.Buffer{}
 
