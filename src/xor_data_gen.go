@@ -6,8 +6,9 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func genXor(n int, stdDev float64) []*mat.Dense {
+func genXor(n int, stdDev float64) (data_points []*mat.Dense, labels []float64) {
 	data := make([]*mat.Dense, n)
+	var lbls []float64
 	var m mat.Dense
 	for i := 0; i < n; i++ {
 		switch i % 4 {
@@ -24,8 +25,9 @@ func genXor(n int, stdDev float64) []*mat.Dense {
 		// Generate some normally distributed noise
 		m.Scale(stdDev, mat.NewDense(1, 2, []float64{rand.NormFloat64(), rand.NormFloat64()}))
 		data[i].Add(data[i], &m)
+		lbls = append(lbls, xorOutput(data[i]))
 	}
-	return data
+	return data, lbls
 }
 
 func xorOutput(in *mat.Dense) float64 {
