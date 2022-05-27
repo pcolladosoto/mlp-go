@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -38,27 +39,69 @@ func main() {
 	// 	}
 	// }
 
-	// fmt.Printf("\nGenerating some XOR data...\n")
-	// xorData := genXor(16, 1)
+	dsize := 80.0
+
+	train_passes := 1000000
+
+	fmt.Printf("\nGenerating some XOR data...\n")
+	xorData, xorLabels := genXor(int(dsize), 0.1)
 	// for i, p := range xorData {
 	// 	fmt.Printf("\tData point %2d (Out -> %1.0f) = %6.3f\n", i, xorOutput(p), mat.Formatted(p))
 	// }
 
+	xorDataTrain, xorLabelsTrain := xorData[:int(dsize*0.9)], xorLabels[:int(dsize*0.9)]
+	xorDataTest, xorLabelsTest := xorData[int(dsize*0.9):], xorLabels[int(dsize*0.9):]
+
+	var outputPredTest []float64
+
 	m, _ := NewMlp([]int{2, 2, 1}, Sigmoid, 1)
-	m.SetWeights([][]float64{{6, 0, -2, 2, -2, 0}, {-4, 2, 2}})
+	// m.SetWeights([][]float64{{6, 0, -2, 2, -2, 0}, {-4, 2, 2}})
 	fmt.Printf("%s", m)
 
-	acts, net_acts := m.ComputeActivation([]float64{1, 0})
+	// acts, net_acts := m.ComputeActivation([]float64{1, 0})
 
-	fmt.Printf("\nActivations for [1; 0]:\n")
-	for i, act := range acts {
-		fmt.Printf("\tActivation     %2d -> %6.3f\n", i, mat.Formatted(act, mat.FormatMATLAB()))
+	// fmt.Printf("\nActivations for [1; 0]:\n")
+	// for i, act := range acts {
+	// 	fmt.Printf("\tActivation     %2d -> %6.3f\n", i, mat.Formatted(act, mat.FormatMATLAB()))
+	// }
+
+	// fmt.Printf("\nNet Activations for [1; 0]:\n")
+	// for i, net_act := range net_acts {
+	// 	fmt.Printf("\tNet Activation %2d -> %6.3f\n", i, mat.Formatted(net_act, mat.FormatMATLAB()))
+	// }
+
+	for i := 0; i < train_passes; i++ {
+		rSample := rand.Intn(int(dsize * 0.9))
+
+		m.Adapt(xorDataTrain[rSample].RawMatrix().Data, []float64{xorLabelsTrain[rSample]}, 0.05)
+
+		// output, _, _ := m.ComputeActivation(xorDataTrain[rSample].RawMatrix().Data)
+
+		// if i < int(0.1*float64(train_passes)) || i > int(0.9*float64(train_passes)) {
+		// 	fmt.Printf("Training output for %6.3f: %6.3f [%d]\n",
+		// 		mat.Formatted(xorDataTrain[rSample], mat.FormatMATLAB()), output[0], int(xorLabelsTrain[rSample]))
+		// }
 	}
 
-	fmt.Printf("\nNet Activations for [1; 0]:\n")
-	for i, net_act := range net_acts {
-		fmt.Printf("\tNet Activation %2d -> %6.3f\n", i, mat.Formatted(net_act, mat.FormatMATLAB()))
+	for i, dp := range xorDataTest {
+		output, _, _ := m.ComputeActivation(dp.RawMatrix().Data)
+
+		if output[0] > 0.5 {
+			outputPredTest = append(outputPredTest, 1)
+		} else {
+			outputPredTest = append(outputPredTest, 0)
+		}
+
+		fmt.Printf("Testing output for %6.3f: %6.3f [%d] [%d]\n",
+			mat.Formatted(dp, mat.FormatMATLAB()), output[0], int(outputPredTest[i]), int(xorLabelsTest[i]))
 	}
 
-	m.Adapt([]float64{1, 0}, []float64{1}, 1)
+	errs := 0.0
+	for i, p_res := range outputPredTest {
+		if p_res != xorLabelsTest[i] {
+			errs++
+		}
+	}
+
+	fmt.Printf("Testing error rate: %2.5f\n", errs/float64(len(outputPredTest)))
 }
