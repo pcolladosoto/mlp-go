@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"math/rand"
-
-	"gonum.org/v1/gonum/mat"
 )
 
 func main() {
@@ -73,7 +71,7 @@ func main() {
 	for i := 0; i < train_passes; i++ {
 		rSample := rand.Intn(int(dsize * 0.9))
 
-		m.Adapt(xorDataTrain[rSample].RawMatrix().Data, []float64{xorLabelsTrain[rSample]}, 0.05)
+		m.Adapt(xorDataTrain[rSample], []float64{xorLabelsTrain[rSample]}, 0.05)
 
 		// output, _, _ := m.ComputeActivation(xorDataTrain[rSample].RawMatrix().Data)
 
@@ -84,7 +82,7 @@ func main() {
 	}
 
 	for i, dp := range xorDataTest {
-		output, _, _ := m.ComputeActivation(dp.RawMatrix().Data)
+		output, _, _ := m.ComputeActivation(dp)
 
 		if output[0] > 0.5 {
 			outputPredTest = append(outputPredTest, 1)
@@ -92,8 +90,8 @@ func main() {
 			outputPredTest = append(outputPredTest, 0)
 		}
 
-		fmt.Printf("Testing output for %6.3f: %6.3f [%d] [%d]\n",
-			mat.Formatted(dp, mat.FormatMATLAB()), output[0], int(outputPredTest[i]), int(xorLabelsTest[i]))
+		fmt.Printf("Testing output for %6.3f: [%6.3f; %6.3f] [%d] [%d]\n",
+			dp[0], dp[1], output[0], int(outputPredTest[i]), int(xorLabelsTest[i]))
 	}
 
 	errs := 0.0
