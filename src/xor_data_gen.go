@@ -29,13 +29,7 @@ func genXor(n int, stdDev float64) (data_points [][]float64, labels []float64) {
 }
 
 func xorOutput(in []float64) float64 {
-	xor := 0
-	for i := 0; i < 2; i++ {
-		if in[i] > 0.5 {
-			xor++
-		}
-	}
-	if xor == 1 {
+	if (in[0] > 0.5 && in[1] <= 0.5) || (in[0] <= 0.5 && in[1] > 0.5) {
 		return 1
 	}
 	return 0
