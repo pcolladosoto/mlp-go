@@ -1,10 +1,10 @@
-package main
+package mlp
 
 import (
 	"math/rand"
 )
 
-func genXor(n int, stdDev float64) (data_points [][]float64, labels []float64) {
+func GenXor(n int, stdDev float64) (data_points [][]float64, labels []float64) {
 	data := make([][]float64, n)
 	var lbls []float64
 	for i := 0; i < n; i++ {

@@ -1,4 +1,4 @@
-package main
+package mlp
 
 import (
 	"bytes"
@@ -168,4 +168,18 @@ func (mlp *Mlp) GenTestData() {
 
 	ioutil.WriteFile("testdata/act_data.b64", []byte(base64.StdEncoding.EncodeToString(acts_buff.Bytes())), 0644)
 	ioutil.WriteFile("testdata/net_act_data.b64", []byte(base64.StdEncoding.EncodeToString(net_acts_buff.Bytes())), 0644)
+}
+
+func ErrorRate(predictions, labels []float64) float64 {
+	if len(predictions) != len(labels) {
+		return -1
+	}
+
+	errs := 0.0
+	for i, pRes := range predictions {
+		if pRes != labels[i] {
+			errs++
+		}
+	}
+	return errs / float64(len(predictions))
 }

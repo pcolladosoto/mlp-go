@@ -1,4 +1,4 @@
-module github.com/pcolladosoto/mlp-go
+module github.com/pcolladosoto/mlp-go/mlp
 
 go 1.17
 
