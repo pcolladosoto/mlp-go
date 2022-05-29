@@ -2,11 +2,15 @@ package mlp
 
 import (
 	"math/rand"
+	"time"
 )
 
 func GenXor(n int, stdDev float64) (data_points [][]float64, labels []float64) {
 	data := make([][]float64, n)
 	var lbls []float64
+
+	rand.Seed(time.Now().Unix())
+
 	for i := 0; i < n; i++ {
 		switch i % 4 {
 		case 0:
