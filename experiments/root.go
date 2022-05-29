@@ -41,12 +41,12 @@ func init() {
 
 	rootCmd.AddCommand(xorExp)
 
-	rootCmd.Flags().IntSliceVar(&mlpDims, "mlp_dimensions", []int{2, 2, 1},
+	rootCmd.PersistentFlags().IntSliceVar(&mlpDims, "mlp_dimensions", []int{2, 2, 1},
 		"The dimension of each layer of the MLP. Note the initial and final dimensions are those of the input and output, respectively.")
-	rootCmd.Flags().StringVar(&actFunction, "act_function", "sigmoid",
+	rootCmd.PersistentFlags().StringVar(&actFunction, "act_function", "sigmoid",
 		"The activation function for each MLP neuron. One of: [sigmoid, ReLu, unitStep].")
-	rootCmd.Flags().Float64Var(&weightVariance, "weight_variance", 1,
+	rootCmd.PersistentFlags().Float64Var(&weightVariance, "weight_variance", 1,
 		"The variance for the random and normally-distributed initial weights.")
-	rootCmd.Flags().Float64Var(&learningRate, "learning_rate", 0.05,
+	rootCmd.PersistentFlags().Float64Var(&learningRate, "learning_rate", 0.05,
 		"The learning rate for the back-propagation algorithm.")
 }
